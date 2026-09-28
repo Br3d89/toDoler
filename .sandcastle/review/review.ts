@@ -187,7 +187,7 @@ const result = await runWithExtraction({
 const verdict = result.commits.length > 0 ? "improved" : "clean";
 
 const headSha = sh("git rev-parse HEAD").trim();
-const diffLines = parseDiffLines(safeSh("git diff main...HEAD"));
+const diffLines = parseDiffLines(safeSh("git diff master...HEAD"));
 const validInlineComments = result.output.inlineComments.filter((c) => {
   const fileLines = diffLines.get(c.path);
   if (!fileLines) {

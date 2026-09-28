@@ -197,7 +197,7 @@ if (commitsThisRun === 0 && replyCount === 0) {
 }
 
 const headSha = sh("git rev-parse HEAD").trim();
-const diffLines = parseDiffLines(safeSh("git diff main...HEAD"));
+const diffLines = parseDiffLines(safeSh("git diff master...HEAD"));
 const validInlineComments = result.output.newInlineComments.filter((c) => {
   const fileLines = diffLines.get(c.path);
   if (!fileLines) {

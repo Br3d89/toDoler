@@ -27,7 +27,7 @@ const result = await sandcastle.run({
 });
 
 const commitsAhead = Number(
-  execSync("git rev-list --count main..HEAD", { encoding: "utf8" }).trim()
+  execSync("git rev-list --count master..HEAD", { encoding: "utf8" }).trim()
 );
 if (!Number.isFinite(commitsAhead) || commitsAhead === 0) {
   fail("Agent finished but no commits were made on the branch.");
