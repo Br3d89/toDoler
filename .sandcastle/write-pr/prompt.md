@@ -17,9 +17,9 @@ gh issue view {{ISSUE_NUMBER}} --comments
 Read what changed on the branch:
 
 ```
-git log main..{{BRANCH}} --reverse
-git diff main..{{BRANCH}} --stat
-git diff main..{{BRANCH}}
+git log master..{{BRANCH}} --reverse
+git diff master..{{BRANCH}} --stat
+git diff master..{{BRANCH}}
 ```
 
 If the diff is large, focus on the commit messages and the `--stat`

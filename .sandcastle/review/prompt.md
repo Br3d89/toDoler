@@ -18,9 +18,9 @@ Read `CONTEXT.md`, `CODING_STANDARDS.md`, and any relevant ADRs under `docs/adr/
 
 This is a **summary** of the diff — changed files with added/removed line counts, not the full patch:
 
-!`git diff main..HEAD --stat`
+!`git diff master..HEAD --stat`
 
-The full patch is deliberately omitted here because it can be very long. Go deeper on the files that matter: run `git diff main..HEAD -- <path>` on the changed files above to read the actual changes before reviewing.
+The full patch is deliberately omitted here because it can be very long. Go deeper on the files that matter: run `git diff master..HEAD -- <path>` on the changed files above to read the actual changes before reviewing.
 
 </diff-to-main>
 
@@ -46,7 +46,7 @@ Use the **`code-review` skill** (installed globally at `~/.claude/skills/code-re
 
 Invoke it with everything it needs, so it does **not** run its own discovery and does **not** prompt or pause:
 
-- **Fixed point:** `main`. The diff to review is `git diff main...HEAD`. Do not ask for a fixed point — it is `main`.
+- **Fixed point:** `master`. The diff to review is `git diff master...HEAD`. Do not ask for a fixed point — it is `master`.
 - **Spec:** issue #{{ISSUE_NUMBER}} — already fetched above in `<linked-issue>`. Pass this as the spec. Do **not** look for `docs/agents/issue-tracker.md` and do **not** run `/setup-matt-pocock-skills`; the spec is provided. If the linked issue is a **PRD** (it has sub-issues), pull them with `gh api repos/$GH_REPO/issues/{{ISSUE_NUMBER}}/sub_issues` and treat each closed sub-issue as a sub-requirement; code for an _open_ sub-issue is a scope violation.
 - **Standards:** `CODING_STANDARDS.md` is this repo's documented standard — feed it as the standards source. The skill's built-in smell baseline applies on top, but a documented repo standard always wins.
 
@@ -74,9 +74,9 @@ Default to Address. Decline when you have a real reason. Defer only when a reply
 
 # EXECUTION
 
-1. Run `pnpm run typecheck` and `pnpm run test` — confirm the current state passes.
+1. Run `pnpm run check` — confirm the current state passes.
 2. Make improvements + write any new edge-case tests. Stage and commit them as a **single squashed commit** on this branch with a message starting with `RALPH: Review -`.
-3. Run `pnpm run typecheck` and `pnpm run test` again. If either fails, fix it before continuing — do not leave the branch broken.
+3. Run `pnpm run check` again. If it fails, fix it before continuing — do not leave the branch broken.
 4. Decide which inline review comments to leave (line-anchored notes about your changes or remaining findings) and which thread replies to make.
 
 If the code is already clean and there are no human comments to address, make no commits.
