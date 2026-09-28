@@ -6,10 +6,12 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "test": "ng test",
+    "typecheck": "tsc -p src/tsconfig.app.json --noEmit && tsc -p src/tsconfig.spec.json --noEmit",
+    "test": "ng test --watch=false --browsers=ChromeHeadless",
+    "test:watch": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "check": "ng lint && ng test --watch=false --browsers=ChromeHeadless"
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test"
   },
   "private": true,
   "dependencies": {
@@ -23,7 +25,7 @@
     "@angular/platform-browser-dynamic": "^6.0.3",
     "@angular/router": "^6.0.3",
     "core-js": "^2.5.4",
-    "rxjs": "^6.0.0",
+    "rxjs": "6.3.3",
     "zone.js": "^0.8.26"
   },
   "devDependencies": {
@@ -32,7 +34,7 @@
     "@angular/cli": "~6.0.8",
     "@angular/compiler-cli": "^6.0.3",
     "@angular/language-service": "^6.0.3",
-    "@types/jasmine": "~2.8.6",
+    "@types/jasmine": "2.8.8",
     "@types/jasminewd2": "~2.0.3",
     "@types/node": "~8.9.4",
     "codelyzer": "~4.2.1",
