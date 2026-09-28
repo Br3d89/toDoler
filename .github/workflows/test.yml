@@ -1,6 +1,6 @@
-# The exhaustive run. docs/agents/testing.md tells every agent to stay
-# targeted locally because this job runs the whole suite on every PR — so this
-# file is what makes that instruction true.
+# The exhaustive run: every pull request and every push to master goes through
+# `pnpm check`, the same command a developer runs by hand. If this job is green
+# the change typechecks, lints, builds, and passes every spec in the repo.
 name: Check
 
 on:
@@ -33,7 +33,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # typecheck, oxlint, package boundaries, the five file guards, then the
-      # unfiltered test run. One script, the same one a human runs by hand.
+      # typecheck (app, specs, tooling), lint, production build, the app specs
+      # under jsdom, then the tooling specs under Node. One script, five stages,
+      # and the first one to fail stops the job.
       - name: Check
         run: pnpm run check
