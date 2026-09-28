@@ -1,6 +1,6 @@
 # ToDoler
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.0.8.
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 22.2.0.
 
 ## Development server
 
@@ -12,16 +12,19 @@ Run `ng generate component component-name` to generate a new component. You can 
 
 ## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Builds are production-configured by default; use `--configuration development` for an unoptimised build.
 
 ## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Run `ng test` to execute the unit tests via [Vitest](https://vitest.dev) in a jsdom environment.
 
-## Running end-to-end tests
+## Linting
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+Run `ng lint` to lint the project with [angular-eslint](https://github.com/angular-eslint/angular-eslint).
+
+## End-to-end tests
+
+This project has no end-to-end tests. The original Protractor suite was dropped during the Angular 22 upgrade — Protractor reached end of life and is not supported by the current CLI. Pick a replacement (Playwright, Cypress or WebdriverIO) before adding e2e coverage back.
 
 ## Further help
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
-# toDoler
+To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/main/README.md).
