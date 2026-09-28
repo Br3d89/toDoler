@@ -80,7 +80,7 @@ jobs:
       - name: Ensure main is available for diffing
         if: steps.state.outputs.proceed == 'true' && steps.inputs.outputs.proceed == 'true'
         run: |
-          git fetch origin main:main || git fetch origin main
+          git fetch origin master:master || git fetch origin master
           git checkout "$BRANCH" 2>/dev/null || git checkout -B "$BRANCH"
 
       - name: Setup pnpm

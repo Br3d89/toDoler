@@ -136,7 +136,7 @@ jobs:
         if: steps.shape.outputs.mode == 'run'
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: master
           fetch-depth: 0
           # AGENT_PAT lets us push changes to files under .github/workflows/.
           # Falls back to GITHUB_TOKEN if AGENT_PAT is unset.
@@ -242,7 +242,7 @@ jobs:
             PR_TITLE="${PR_TITLE:0:256}"
             pr_url=$(gh pr create \
               --draft \
-              --base main \
+              --base master \
               --head "$BRANCH" \
               --title "$PR_TITLE" \
               --body-file "${RUNNER_TEMP}/pr_description.txt" | tail -n1)

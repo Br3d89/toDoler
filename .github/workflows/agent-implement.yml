@@ -99,7 +99,7 @@ jobs:
         if: steps.shape.outputs.proceed == 'true' && steps.preflight.outputs.refused != 'true'
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: master
           fetch-depth: 0
           # Use AGENT_PAT so pushes can include changes to files under
           # .github/workflows/ (GITHUB_TOKEN lacks the `workflows` scope).
@@ -183,7 +183,7 @@ jobs:
           PR_TITLE="${PR_TITLE:0:256}"
           pr_url=$(gh pr create \
             --draft \
-            --base main \
+            --base master \
             --head "$BRANCH" \
             --title "$PR_TITLE" \
             --body-file "${RUNNER_TEMP}/pr_description.txt" | tail -n1)
