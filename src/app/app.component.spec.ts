@@ -24,4 +24,27 @@ describe('AppComponent', () => {
     const compiled = fixture.debugElement.nativeElement;
     expect(compiled.querySelector('h1').textContent).toContain('Welcome to toDoler!');
   }));
+  it('should give every list item a title', async(() => {
+    const titles = renderListItemTitles();
+    expect(titles.length).toBeGreaterThan(0);
+    titles.forEach((title) => expect(title).toBeTruthy());
+  }));
+  it('should title each list item after the link it holds', async(() => {
+    expect(renderListItemTitles()).toEqual([
+      'Tour of Heroes: build your first Angular app step by step',
+      'CLI Documentation: reference for the Angular CLI commands',
+      'Angular blog: news and release notes from the Angular team'
+    ]);
+  }));
 });
+
+function renderListItemTitles(): string[] {
+  const fixture = TestBed.createComponent(AppComponent);
+  fixture.detectChanges();
+  const items = fixture.debugElement.nativeElement.querySelectorAll('li');
+  const titles: string[] = [];
+  for (let i = 0; i < items.length; i++) {
+    titles.push(items[i].getAttribute('title'));
+  }
+  return titles;
+}
