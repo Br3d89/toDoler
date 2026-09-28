@@ -2,7 +2,7 @@
 
 Implement issue #{{ISSUE_NUMBER}}: {{ISSUE_TITLE}}
 
-You are on branch `{{BRANCH}}`, already created from `main`. Pull in the
+You are on branch `{{BRANCH}}`, already created from `master`. Pull in the
 issue with `gh issue view {{ISSUE_NUMBER}} --comments`. If it has a
 parent PRD, pull that in too.
 
@@ -22,7 +22,7 @@ Use red-green-refactor where applicable.
 3. REPEAT until the issue is done
 4. REFACTOR
 
-Before committing, run `pnpm run typecheck` and `pnpm run test`.
+Before committing, run `pnpm run check`.
 
 # COMMIT
 
