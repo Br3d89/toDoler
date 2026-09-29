@@ -1,5 +1,11 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { isAbsolute, join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -48,6 +54,14 @@ function trackedFiles(...patterns: string[]): string[] {
     .sort();
 }
 
+/**
+ * A spec that fails on purpose, so that a guard can watch the gate go red.
+ * Named `.fixture.ts` rather than `.spec.ts` so the normal run does not
+ * collect it — an exclusion the "spec discovery" block asserts rather than
+ * assumes.
+ */
+const FAILING_ASSERTION_FIXTURE = "src/testing/failing-assertion.fixture.ts";
+
 const scripts = (
   JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
     scripts: Record<string, string>;
@@ -78,9 +92,14 @@ describe("the check gate", () => {
 });
 
 describe("spec discovery", () => {
+  /** Everything the app runner (`pnpm run test`) says it would execute. */
+  function appSuiteListing(): string {
+    return stripAnsi(run("pnpm", ["exec", "ng", "test", "--list-tests"]));
+  }
+
   /** Test files the app runner (`pnpm run test`) reports, repo-relative. */
   function appSuiteFiles(): string[] {
-    return specPathsIn(run("pnpm", ["exec", "ng", "test", "--list-tests"]));
+    return specPathsIn(appSuiteListing());
   }
 
   /** Test files the tools runner (`pnpm run test:tools`) reports. */
@@ -115,15 +134,40 @@ describe("spec discovery", () => {
     },
     SUBPROCESS_TIMEOUT,
   );
+
+  it(
+    "leaves the deliberately failing fixture out of the normal run",
+    () => {
+      // The fixture stays out of `pnpm run test` only because the builder's
+      // default `include` covers *.spec.ts and *.test.ts and nothing else.
+      // No file in this repo says so, so widening `include` — or adding a
+      // coverage run over src/ — would turn the gate red on a spec that is
+      // supposed to fail. Assert the exclusion rather than inherit it.
+      const listing = appSuiteListing();
+
+      // `not.toContain` passes against an empty or unparseable listing, for
+      // the wrong reason. Confirm the listing enumerated specs at all first.
+      expect(specPathsIn(listing).length).toBeGreaterThan(0);
+      expect(listing).not.toContain(FAILING_ASSERTION_FIXTURE);
+    },
+    SUBPROCESS_TIMEOUT,
+  );
 });
 
 describe("the gate can go red", () => {
-  const FAILING_SPEC = "src/testing/failing-assertion.fixture.ts";
+  /** Removes probes a previous run was killed before cleaning up. */
+  function sweepProbes(): void {
+    for (const entry of readdirSync(join(repoRoot, "tools"))) {
+      if (entry.endsWith(".probe.ts")) {
+        rmSync(join(repoRoot, "tools", entry), { force: true });
+      }
+    }
+  }
 
   it(
     "fails when a spec assertion fails",
     () => {
-      expect(existsSync(join(repoRoot, FAILING_SPEC))).toBe(true);
+      expect(existsSync(join(repoRoot, FAILING_ASSERTION_FIXTURE))).toBe(true);
 
       const { status, output } = attempt("pnpm", [
         "exec",
@@ -138,7 +182,7 @@ describe("the gate can go red", () => {
       // An `--include` that matches no file also exits non-zero, so the exit
       // code alone would keep this test green after someone deleted the
       // fixture. Insist the fixture ran and that its assertion is what failed.
-      expect(output).toContain(FAILING_SPEC);
+      expect(output).toContain(FAILING_ASSERTION_FIXTURE);
       expect(output).toMatch(/Tests\s+1 failed/);
     },
     SUBPROCESS_TIMEOUT,
@@ -150,9 +194,17 @@ describe("the gate can go red", () => {
       // Unlike the failing assertion, this one cannot live in the tree: a
       // permanent type error would fail the gate it is meant to prove. Write
       // it into a directory `typecheck` covers, then take it straight back
-      // out. `.gitignore` covers the probe in case this process is killed
-      // before the `finally` runs.
-      const probe = "tools/type-error.probe.ts";
+      // out.
+      //
+      // A run killed before its `finally` leaves a probe behind, and
+      // `tsconfig.tools.json` keeps compiling it, so every later `typecheck`
+      // fails on a file nobody wrote. Sweeping first makes that self-heal,
+      // and the probes are deliberately *not* gitignored: one that outlives
+      // the sweep should show up in `git status` next to the type error it
+      // causes, rather than being hidden from the one command that would
+      // explain it. The pid keeps concurrent runs off each other's probe.
+      sweepProbes();
+      const probe = `tools/type-error.${process.pid}.probe.ts`;
       writeFileSync(
         join(repoRoot, probe),
         'export const wrong: number = "not a number";\n',
@@ -190,7 +242,9 @@ describe("typecheck coverage", () => {
       .map((line) => line.trim())
       .filter((line) => isAbsolute(line))
       .map((file) => relative(repoRoot, file))
-      .filter((file) => !file.startsWith("..") && !file.includes("node_modules"));
+      .filter(
+        (file) => !file.startsWith("..") && !file.includes("node_modules"),
+      );
   }
 
   it(
@@ -216,9 +270,30 @@ describe("typecheck coverage", () => {
 });
 
 describe("the docs that describe the gate", () => {
-  // The ADR is deliberately absent: it records history, so it cites files
-  // this change deleted (`src/tslint.json`) and should keep citing them.
-  const DOCS = [".github/workflows/test.yml", "README.md"];
+  const WORKFLOW = ".github/workflows/test.yml";
+  const ADR = "docs/adr/0001-one-check-gate-on-a-supported-toolchain.md";
+
+  /**
+   * Docs that cite files in this tree, each asserted below to still yield at
+   * least one path *on its own*. A total across every doc is not enough: it
+   * stays above zero on one doc's citations while another silently drops out
+   * of the scan, which is how the first version of this guard went inert.
+   */
+  const DOCS_CITING_FILES = ["README.md", ADR];
+
+  /**
+   * Scanned for paths that do not exist, but not required to cite any. The
+   * workflow comment describes the pipeline in prose, and demanding it name a
+   * file would be rewriting the doc to suit the test.
+   */
+  const DOCS_SCANNED_ONLY = [WORKFLOW];
+
+  /**
+   * Paths the ADR cites *because* they are gone — it records the decision
+   * that deleted them. Exempt from the existence check, and guarded below so
+   * the exemption cannot outlive the sentence it was cut for.
+   */
+  const DELETED_BY_THIS_DECISION = ["src/tslint.json"];
 
   /**
    * Repo-relative paths, anchored to a top-level directory so that URLs and
@@ -227,31 +302,59 @@ describe("the docs that describe the gate", () => {
   const REPO_PATH =
     /(?<![\w./-])(?:\.github|\.sandcastle|docs|public|src|tools)(?:\/[\w.-]+)+\.\w+/g;
 
-  const workflow = readFileSync(
-    join(repoRoot, ".github/workflows/test.yml"),
-    "utf8",
-  );
+  function pathsCitedIn(doc: string): string[] {
+    const text = readFileSync(join(repoRoot, doc), "utf8");
+
+    return [...new Set(text.match(REPO_PATH) ?? [])];
+  }
 
   it("runs the same gate a developer runs by hand", () => {
-    expect(workflow).toContain("pnpm run check");
+    expect(readFileSync(join(repoRoot, WORKFLOW), "utf8")).toContain(
+      "pnpm run check",
+    );
   });
 
   it("points only at files that exist", () => {
-    // The comment in the workflow once described a pipeline of oxlint,
-    // package boundaries and file guards that this repository has never run.
-    const referenced = [
-      ...new Set(
-        DOCS.flatMap(
-          (doc) => readFileSync(join(repoRoot, doc), "utf8").match(REPO_PATH) ?? [],
-        ),
-      ),
-    ];
+    // The workflow comment once described a pipeline of oxlint, package
+    // boundaries and file guards that this repository has never run, citing
+    // a `docs/agents/testing.md` that never existed.
+    const citations = new Map(
+      [...DOCS_CITING_FILES, ...DOCS_SCANNED_ONLY].map((doc) => [
+        doc,
+        pathsCitedIn(doc),
+      ]),
+    );
 
     // A regex that quietly stops matching turns the assertion below into one
     // that cannot fail, which is the exact defect these guards exist for.
-    expect(referenced.length).toBeGreaterThan(0);
+    for (const doc of DOCS_CITING_FILES) {
+      expect(citations.get(doc), `${doc} cites no files`).not.toEqual([]);
+    }
+
+    // Reported as `doc -> path` so a failure names the doc to go and edit.
+    const missing = [...citations].flatMap(([doc, paths]) =>
+      paths
+        .filter((path) => !DELETED_BY_THIS_DECISION.includes(path))
+        .filter((path) => !existsSync(join(repoRoot, path)))
+        .map((path) => `${doc} -> ${path}`),
+    );
+
+    expect(missing).toEqual([]);
+  });
+
+  it("exempts a deleted path only while a doc still cites it", () => {
+    const cited = DOCS_CITING_FILES.flatMap(pathsCitedIn);
+
     expect(
-      referenced.filter((path) => !existsSync(join(repoRoot, path))),
+      DELETED_BY_THIS_DECISION.filter((path) => !cited.includes(path)),
+    ).toEqual([]);
+
+    // Were one of these to come back, it would stop being an exemption and
+    // start being a path the guard above should check like any other.
+    expect(
+      DELETED_BY_THIS_DECISION.filter((path) =>
+        existsSync(join(repoRoot, path)),
+      ),
     ).toEqual([]);
   });
 });

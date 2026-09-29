@@ -22,7 +22,7 @@ stages in order, stopping at the first failure:
 | Stage | Command | Covers |
 | --- | --- | --- |
 | typecheck | `pnpm run typecheck` | the app, its specs, and `tools/` + `.sandcastle/` |
-| lint | `pnpm run lint` | `src/**` with angular-eslint |
+| lint | `pnpm run lint` | `src/**/*.ts` and `src/**/*.html`, with angular-eslint |
 | build | `pnpm run build` | the production bundle |
 | test | `pnpm run test` | the app specs, under jsdom |
 | test:tools | `pnpm run test:tools` | the Node specs in `tools/` and `.sandcastle/` |

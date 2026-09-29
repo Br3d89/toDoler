@@ -41,5 +41,3 @@ Thumbs.db
 # Angular build cache
 /.angular/cache
 
-# Scratch file the type-error guard in tools/check-gate.test.ts writes and deletes
-/tools/*.probe.ts

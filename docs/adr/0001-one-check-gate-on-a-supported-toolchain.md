@@ -58,16 +58,26 @@ every stage that can catch a defect.
 - Adding a spec in a directory no runner looks at, or source in a directory no
   tsconfig covers, fails the gate instead of quietly going unverified.
 - Typecheck and the test runners cover the whole tree; lint does not. The
-  `lint` target's `lintFilePatterns` is `src/**`, so `tools/` and
-  `.sandcastle/` are typechecked but not linted. Widening it would mean
-  ruling on the generated harness's style, which this decision does not.
+  `lint` target's `lintFilePatterns` is `src/**/*.ts` and `src/**/*.html`, so
+  `tools/` and `.sandcastle/` are typechecked but not linted. Widening it
+  would mean ruling on the generated harness's style, which this decision
+  does not.
 - Two fixtures prove the gate can go red rather than asserting it.
   `src/testing/failing-assertion.fixture.ts` fails on purpose; it is named
   `.fixture.ts` rather than `.spec.ts` so the normal run does not collect it,
   and only the guard that invokes `ng test --include "**/*.fixture.ts"` does.
+  Asserting that exclusion is part of the guard's job: the fixture stays out
+  of the normal run only because the builder's default `include` stops at
+  `*.spec.ts` and `*.test.ts`, so a widened `include` would otherwise turn
+  the gate red on a spec that is supposed to fail.
+
   A type error cannot be parked in the tree the same way — it would fail the
-  gate it is meant to prove — so the matching guard writes `tools/*.probe.ts`,
-  runs `typecheck` against it, and removes it again.
+  gate it is meant to prove — so the matching guard writes a
+  `tools/type-error.<pid>.probe.ts`, runs `typecheck` against it, and removes
+  it again. It sweeps stale probes before writing, so a run killed before its
+  cleanup self-heals rather than failing `typecheck` forever. The probes are
+  deliberately not gitignored: hiding one from `git status` would hide it
+  from the one command that explains the type error it causes.
 - The tooling typecheck relaxes `noPropertyAccessFromIndexSignature`, a house
   style rule rather than a soundness check, because the generated `.sandcastle`
   harness reads `process.env` with dot access.
