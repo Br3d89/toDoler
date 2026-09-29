@@ -10,20 +10,28 @@ describe('AppComponent', () => {
     }).compileComponents();
   });
   it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(createApp()).toBeTruthy();
   });
   it(`should have as title 'toDoler'`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('toDoler');
+    expect(createApp().title).toEqual('toDoler');
   });
   it('should render title in a h1 tag', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')!.textContent).toContain('Welcome to toDoler!');
+    expect(renderApp().querySelector('h1')!.textContent).toContain('Welcome to toDoler!');
+  });
+  it('should build the list out of divs rather than list elements', () => {
+    const compiled = renderApp();
+    expect(compiled.querySelectorAll('ul, ol, li')).toHaveLength(0);
+    const items = listItems(compiled);
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((item) => expect(item.tagName).toEqual('DIV'));
+  });
+  it('should keep the list semantics the list elements carried', () => {
+    const compiled = renderApp();
+    const lists = compiled.querySelectorAll('div[role="list"]');
+    expect(lists).toHaveLength(1);
+    const items = listItems(compiled);
+    expect(items.length).toBeGreaterThan(0);
+    items.forEach((item) => expect(item.parentElement).toBe(lists[0]));
   });
   it('should give every list item a title', () => {
     const titles = renderListItemTitles();
@@ -39,9 +47,20 @@ describe('AppComponent', () => {
   });
 });
 
-function renderListItemTitles(): (string | null)[] {
+function createApp(): AppComponent {
+  return TestBed.createComponent(AppComponent).componentInstance;
+}
+
+function renderApp(): HTMLElement {
   const fixture = TestBed.createComponent(AppComponent);
   fixture.detectChanges();
-  const items = fixture.nativeElement.querySelectorAll('li') as NodeListOf<HTMLLIElement>;
-  return Array.from(items).map((item) => item.getAttribute('title'));
+  return fixture.nativeElement as HTMLElement;
+}
+
+function listItems(compiled: HTMLElement): HTMLElement[] {
+  return Array.from(compiled.querySelectorAll('[role="listitem"]'));
+}
+
+function renderListItemTitles(): (string | null)[] {
+  return listItems(renderApp()).map((item) => item.getAttribute('title'));
 }
