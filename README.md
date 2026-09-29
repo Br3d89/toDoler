@@ -14,9 +14,25 @@ Run `ng generate component component-name` to generate a new component. You can 
 
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Builds are production-configured by default; use `--configuration development` for an unoptimised build.
 
+## Checks
+
+Run `pnpm check` before pushing. It is the gate CI runs, and it runs five
+stages in order, stopping at the first failure:
+
+| Stage | Command | Covers |
+| --- | --- | --- |
+| typecheck | `pnpm run typecheck` | the app, its specs, and `tools/` + `.sandcastle/` |
+| lint | `pnpm run lint` | `src/**/*.ts` and `src/**/*.html`, with angular-eslint |
+| build | `pnpm run build` | the production bundle |
+| test | `pnpm run test` | the app specs, under jsdom |
+| test:tools | `pnpm run test:tools` | the Node specs in `tools/` and `.sandcastle/` |
+
+`tools/check-gate.test.ts` guards the gate itself — see
+[ADR 1](docs/adr/0001-one-check-gate-on-a-supported-toolchain.md).
+
 ## Running unit tests
 
-Run `ng test` to execute the unit tests via [Vitest](https://vitest.dev) in a jsdom environment.
+Run `ng test` to execute the app's unit tests via [Vitest](https://vitest.dev) in a jsdom environment, or `pnpm run test:watch` to keep them running. The specs that run in plain Node — the check-gate guards and the `.sandcastle` agent harness — belong to the second Vitest project: `pnpm run test:tools`.
 
 ## Linting
 
